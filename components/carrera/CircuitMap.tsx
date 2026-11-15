@@ -72,6 +72,7 @@ export function CircuitMap({ rows, lapRef, track, locations }: Props) {
     const len = path.getTotalLength();
     const fracs = fracKey ? fracKey.split(',').map((s) => s.split(':').map(Number) as [number, number]) : [];
     let base = 0;
+    const t0 = performance.now();
     let raf = 0;
 
     const placeGaps = () => {
@@ -116,7 +117,8 @@ export function CircuitMap({ rows, lapRef, track, locations }: Props) {
     const loop = () => {
       if (mode === 'gps') placeGps();
       else {
-        base = (base + 0.0008) % 1;
+        // Ritmo real: una vuelta por cada vuelta media de la sesión (medido en tiempo, no en cuadros).
+        base = ((performance.now() - t0) / 1000 / lapT) % 1;
         placeGaps();
       }
       raf = requestAnimationFrame(loop);
@@ -124,7 +126,7 @@ export function CircuitMap({ rows, lapRef, track, locations }: Props) {
     if (reduce && mode !== 'gps') placeGaps();
     else loop();
     return () => cancelAnimationFrame(raf);
-  }, [fracKey, mode, proj, d]);
+  }, [fracKey, mode, proj, d, lapT]);
 
   const label =
     mode === 'gps' ? 'GPS EN VIVO' : mode === 'gaps' ? 'TRAZADO REAL · POR GAPS' : 'TRAZADO ESQUEMÁTICO';
