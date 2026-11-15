@@ -1,0 +1,147 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Variables de paleta: inyectadas en :root por el plugin de tailwind.config.ts (lib/theme.ts). */
+
+@layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  html,
+  body {
+    background: var(--carbon);
+    color: var(--ink);
+    overscroll-behavior: none;
+  }
+  body {
+    @apply font-display;
+    min-height: 100vh;
+    position: relative;
+    padding-bottom: 30px;
+  }
+  /* scanlines sutiles */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 50;
+    background: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.016) 0 1px, transparent 1px 3px);
+    mix-blend-mode: overlay;
+    opacity: 0.5;
+  }
+  /* halos broadcast */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: -1;
+    background:
+      radial-gradient(130% 60% at 50% -10%, rgba(255, 30, 60, 0.1), transparent 60%),
+      radial-gradient(90% 50% at 100% 110%, rgba(19, 241, 207, 0.07), transparent 60%);
+  }
+}
+
+@layer components {
+  .panel-surface {
+    @apply rounded border border-line;
+    background: linear-gradient(180deg, var(--panel-2), var(--panel));
+  }
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Clases armadas dinámicamente (ts-${estado}, t-${tipo}): fuera de @layer para que Tailwind no las purgue. */
+/* Barra de estado de pista */
+.ts-GREEN {
+  background: linear-gradient(90deg, rgba(47, 212, 94, 0.13), transparent);
+  color: var(--green);
+}
+.ts-GREEN .tsdot {
+  background: var(--green);
+}
+.ts-YELLOW,
+.ts-DBLYELLOW {
+  background: rgba(255, 209, 46, 0.16);
+  color: var(--medium);
+  animation: tsflash 1.1s infinite;
+}
+.ts-SC,
+.ts-VSC {
+  background: rgba(255, 209, 46, 0.22);
+  color: var(--medium);
+  animation: tsflash 1s infinite;
+}
+.ts-YELLOW .tsdot,
+.ts-DBLYELLOW .tsdot,
+.ts-SC .tsdot,
+.ts-VSC .tsdot {
+  background: var(--medium);
+  box-shadow: 0 0 11px var(--medium);
+}
+.ts-RED {
+  background: rgba(255, 30, 60, 0.24);
+  color: var(--signal);
+  animation: tsflash 0.65s infinite;
+}
+.ts-RED .tsdot {
+  background: var(--signal);
+  box-shadow: 0 0 12px var(--signal);
+}
+.ts-CHEQUERED {
+  background: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.07) 0 6px, transparent 6px 12px);
+  color: var(--ink);
+}
+.ts-CHEQUERED .tsdot {
+  background: var(--ink);
+}
+
+/* Etiquetas del feed de control */
+.t-PENALTY {
+  background: rgba(255, 30, 60, 0.14);
+  color: var(--signal);
+}
+.t-INVESTIGATION {
+  background: rgba(255, 178, 36, 0.13);
+  color: var(--amber);
+}
+.t-FLAG {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+.t-SC,
+.t-VSC {
+  background: rgba(255, 209, 46, 0.16);
+  color: var(--medium);
+}
+.t-RED {
+  background: rgba(255, 30, 60, 0.2);
+  color: var(--signal);
+}
+.t-SESSION {
+  background: rgba(19, 241, 207, 0.12);
+  color: var(--telemetry);
+}
+
+@keyframes tsflash {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
