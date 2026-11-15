@@ -12,6 +12,8 @@ export interface Projection {
   d: string;
   /** Punto de largada/llegada (primer punto de la vuelta). */
   start: [number, number];
+  /** Dirección de la pista en la línea de llegada (grados), para dibujar la línea a cuadros cruzada. */
+  startAngle: number;
 }
 
 /**
@@ -49,5 +51,8 @@ export function makeProjection(track: TrackShape): Projection | null {
 
   const proj = pts.map(([x, y]) => project(x, y));
   const d = `M${proj.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' L')} Z`;
-  return { project, d, start: proj[0] };
+  const [x0, y0] = proj[0];
+  const [x1, y1] = proj[Math.min(3, proj.length - 1)];
+  const startAngle = (Math.atan2(y1 - y0, x1 - x0) * 180) / Math.PI;
+  return { project, d, start: proj[0], startAngle };
 }

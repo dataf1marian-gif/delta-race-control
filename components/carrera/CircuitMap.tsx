@@ -37,6 +37,8 @@ export function CircuitMap({ rows, lapRef, track, locations, badge }: Props) {
   const mode: Mode = hasGps ? 'gps' : proj ? 'gaps' : 'schematic';
   const d = proj?.d ?? SCHEMATIC;
   const start = proj?.start ?? [64, 168];
+  // En el esquemático la pista sale hacia arriba a la izquierda desde la largada.
+  const startAngle = proj?.startAngle ?? 222;
 
   const classified = rows.filter((r) => r.pos != null);
 
@@ -158,7 +160,15 @@ export function CircuitMap({ rows, lapRef, track, locations, badge }: Props) {
         <path d={d} fill="none" stroke="#2b3442" strokeWidth={10} strokeLinejoin="round" />
         <path d={d} fill="none" stroke="#0c0f14" strokeWidth={5} strokeLinejoin="round" />
         <path ref={pathRef} d={d} fill="none" stroke="var(--telemetry)" strokeWidth={1.4} opacity={0.55} strokeLinejoin="round" />
-        <circle cx={start[0]} cy={start[1]} r={3.2} fill="#fff" />
+        {/* Línea de largada/llegada: franja a cuadros perpendicular a la pista. */}
+        <g transform={`translate(${start[0]},${start[1]}) rotate(${startAngle + 90})`} aria-label="Línea de llegada">
+          {[-6, -3, 0, 3].map((x, i) => (
+            <g key={x}>
+              <rect x={x} y={-3} width={3} height={3} fill={i % 2 ? '#0c0f14' : '#fff'} />
+              <rect x={x} y={0} width={3} height={3} fill={i % 2 ? '#fff' : '#0c0f14'} />
+            </g>
+          ))}
+        </g>
         {/* Orden inverso: el líder queda dibujado arriba de todo. */}
         {[...classified].reverse().map((r) => (
           <g
