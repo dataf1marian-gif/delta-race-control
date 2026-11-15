@@ -11,6 +11,7 @@ import type {
   Lap,
   LapSummary,
   LivePosition,
+  LocationSeries,
   Meeting,
   Pit,
   RaceControlEvent,
@@ -224,6 +225,27 @@ export const normalizers = {
         rainfall: bool(r.rainfall) || (num(r.rainfall) ?? 0) > 0,
       }))
       .sort(byDate),
+
+  /** GPS: agrupado por auto, solo los últimos 15s, como [epochMs, x, y]. */
+  location: (rows: Raw[]): LocationSeries[] => {
+    const by = new Map<number, [number, number, number][]>();
+    let maxT = 0;
+    for (const r of rows) {
+      const n = num(r.driver_number);
+      const t = Date.parse(str(r.date));
+      const x = num(r.x);
+      const y = num(r.y);
+      if (n == null || !Number.isFinite(t) || x == null || y == null) continue;
+      if (t > maxT) maxT = t;
+      let arr = by.get(n);
+      if (!arr) by.set(n, (arr = []));
+      arr.push([t, x, y]);
+    }
+    return [...by.entries()].map(([driver_number, pts]) => ({
+      driver_number,
+      pts: pts.filter((p) => p[0] >= maxT - 15_000).sort((a, b) => a[0] - b[0]),
+    }));
+  },
 
   meetings: (rows: Raw[]): Meeting[] =>
     rows

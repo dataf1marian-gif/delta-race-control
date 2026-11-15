@@ -1,6 +1,7 @@
 'use client';
 
 import type { RaceControlEvent, RCType } from '@/lib/openf1/types';
+import { isFeedWorthy } from '@/lib/trackStatus';
 import { useDrivers } from '../DriversContext';
 import { EmptyState, SectionHeader } from '../ui';
 
@@ -12,12 +13,13 @@ const TL: Record<RCType, string> = {
   VSC: 'VSC',
   RED: 'BANDERA ROJA',
   SESSION: 'SESIÓN',
+  INFO: 'AVISO',
 };
 
 /** Feed de control de carrera, más nuevo arriba. */
 export function ControlPanel({ events }: { events: RaceControlEvent[] }) {
   const { ac } = useDrivers();
-  const shown = events.filter((e): e is RaceControlEvent & { type: RCType } => e.type != null);
+  const shown = events.filter((e): e is RaceControlEvent & { type: RCType } => isFeedWorthy(e));
 
   return (
     <div className="lg:mx-auto lg:max-w-3xl">

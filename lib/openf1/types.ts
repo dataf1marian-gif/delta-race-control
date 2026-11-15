@@ -130,7 +130,7 @@ export interface Pit {
   date: string | null;
 }
 
-export type RCType = 'PENALTY' | 'INVESTIGATION' | 'FLAG' | 'SC' | 'VSC' | 'RED' | 'SESSION';
+export type RCType = 'PENALTY' | 'INVESTIGATION' | 'FLAG' | 'SC' | 'VSC' | 'RED' | 'SESSION' | 'INFO';
 
 export interface RaceControlEvent {
   date: string | null;
@@ -156,6 +156,22 @@ export interface Weather {
   wind_direction: number | null;
   pressure: number | null;
   rainfall: boolean;
+}
+
+/** Últimos segundos de GPS de un auto: [epochMs, x, y]. */
+export interface LocationSeries {
+  driver_number: number;
+  pts: [number, number, number][];
+}
+
+/** Trazado real del circuito (una vuelta limpia de GPS). */
+export interface TrackShape {
+  meeting_key: number;
+  session_key: number;
+  driver_number: number;
+  lap: number;
+  /** Puntos [x, y] en coordenadas OpenF1, arrancando en la línea de llegada. */
+  points: [number, number][];
 }
 
 export interface Meeting {

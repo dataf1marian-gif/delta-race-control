@@ -5,14 +5,14 @@ import { finalCompounds, weatherSeries, type TowerRow } from '@/lib/derive';
 import { parseGmtOffset } from '@/lib/format';
 import type { RaceData } from '@/lib/useDeltaData';
 import { Note, SectionHeader } from '../ui';
-import { CircuitMap } from './CircuitMap';
+import { CircuitMap, mapNote } from './CircuitMap';
 import { PrecipChart } from './PrecipChart';
 import { StatTiles } from './StatTiles';
 import { Tower } from './Tower';
 import { WeatherGrid, weatherState } from './WeatherGrid';
 
 export function CarreraPanel({ data, rows }: { data: RaceData; rows: TowerRow[] }) {
-  const { session, laps, stints, weather } = data;
+  const { session, laps, stints, weather, track, location } = data;
   const tyres = useMemo(() => finalCompounds(stints), [stints]);
   const series = useMemo(() => weatherSeries(weather), [weather]);
   const lastWx = weather?.[weather.length - 1];
@@ -23,11 +23,8 @@ export function CarreraPanel({ data, rows }: { data: RaceData; rows: TowerRow[] 
       <StatTiles laps={laps} />
 
       <SectionHeader title="CIRCUITO" extra={(session?.circuit_short_name || '—').toUpperCase()} />
-      <CircuitMap rows={rows} lapRef={laps?.medianLap ?? null} />
-      <Note>
-        Posiciones espaciadas por los gaps reales de carrera sobre un trazado esquemático. Próximo paso: posición exacta
-        de cada auto con el GPS del endpoint <b>location</b> de OpenF1.
-      </Note>
+      <CircuitMap rows={rows} lapRef={laps?.medianLap ?? null} track={track} locations={location} />
+      <Note>{mapNote(!!track, !!location?.some((l) => l.pts.length))}</Note>
       </div>
 
       <div className="lg:col-start-2 lg:row-span-2 lg:row-start-1">

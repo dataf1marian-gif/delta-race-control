@@ -124,6 +124,10 @@
   background: rgba(255, 30, 60, 0.2);
   color: var(--signal);
 }
+.t-INFO {
+  background: rgba(138, 147, 166, 0.16);
+  color: var(--ink-dim);
+}
 .t-SESSION {
   background: rgba(19, 241, 207, 0.12);
   color: var(--telemetry);

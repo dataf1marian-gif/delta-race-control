@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { buildClassification } from '@/lib/derive';
-import { computeTrackState } from '@/lib/trackStatus';
+import { computeTrackState, isFeedWorthy } from '@/lib/trackStatus';
 import { useQualyData, useRaceData } from '@/lib/useDeltaData';
 import { BoxesPanel } from './boxes/BoxesPanel';
 import { CalendarioPanel } from './calendario/CalendarioPanel';
@@ -15,8 +15,12 @@ import { QualyPanel } from './qualy/QualyPanel';
 import { isTabId, type TabId } from './Tabs';
 
 export function Dashboard() {
-  const data = useRaceData();
-  const qualy = useQualyData(data.now);
+  const [demo, setDemo] = useState(false);
+  useEffect(() => {
+    setDemo(new URLSearchParams(window.location.search).get('demo') === '1');
+  }, []);
+  const data = useRaceData(demo);
+  const qualy = useQualyData(data.now, data.session?.session_key);
   const [tab, setTab] = useState<TabId>('carrera');
 
   // Pestaña sincronizada con el hash (#control, #boxes…) para poder linkear.
@@ -35,9 +39,13 @@ export function Dashboard() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
-  const events = useMemo(() => data.raceControl ?? [], [data.raceControl]);
+  const events = useMemo(() => {
+    const all = data.raceControl ?? [];
+    // Demo: solo lo ocurrido hasta el instante que se está repitiendo.
+    return data.demoAt != null ? all.filter((e) => !e.date || Date.parse(e.date) <= (data.demoAt as number)) : all;
+  }, [data.raceControl, data.demoAt]);
   const track = useMemo(() => computeTrackState(events), [events]);
-  const lastEvent = useMemo(() => [...events].reverse().find((e) => e.type != null) ?? null, [events]);
+  const lastEvent = useMemo(() => [...events].reverse().find(isFeedWorthy) ?? null, [events]);
 
   const rows = useMemo(
     () => buildClassification(data.results, data.positions, data.intervals, data.live),
@@ -90,6 +98,19 @@ export function Dashboard() {
         onTab={onTab}
       />
       <main>
+        {data.demo && (
+          <div role="status" className="mx-3.5 mt-3 rounded border border-telemetry/40 bg-telemetry/10 px-3 py-2.5 font-mono text-[10px] leading-[1.6] text-telemetry">
+            <b className="tracking-[1px]">MODO DEMO.</b> Repetición de la última sesión como si fuera en vivo (mismo
+            circuito de datos que una carrera real){data.demoAt ? ` · ${new Date(data.demoAt).toLocaleTimeString('es-AR')}` : ''}.{' '}
+            <a href="/" className="underline">Salir</a>
+          </div>
+        )}
+        {data.liveLocked && (
+          <div role="status" className="mx-3.5 mt-3 rounded border border-amber/40 bg-amber/10 px-3 py-2.5 font-mono text-[10px] leading-[1.6] text-amber">
+            <b className="tracking-[1px]">SESIÓN EN VIVO SIN ACCESO A TIEMPO REAL.</b> OpenF1 reserva los datos en vivo a
+            suscriptores; sin suscripción se ven completos desde 30 min después de que termina la sesión.
+          </div>
+        )}
         <section key={tab} className="animate-fade-up" role="tabpanel" aria-label={tab}>
           {tab === 'carrera' && <CarreraPanel data={data} rows={rows} />}
           {tab === 'qualy' && <QualyPanel q={qualy} />}

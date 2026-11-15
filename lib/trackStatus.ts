@@ -11,10 +11,24 @@ export function classifyRC(e: { message?: string | null; category?: string | nul
   if (m.includes('PENALTY')) return 'PENALTY';
   if (m.includes('INVESTIGAT') || m.includes('NOTED')) return 'INVESTIGATION';
   if (cat === 'Flag') return 'FLAG';
-  if (cat === 'SessionStatus') return 'SESSION';
+  if (cat === 'SessionStatus' || /^RACE START/.test(m)) return 'SESSION';
+  if (/RISK OF RAIN|OVERTAKE (EN|DIS)ABLED|DRS (EN|DIS)ABLED|PIT EXIT CLOSED|GRIP CONDITIONS|SLIPPERY/.test(m)) return 'INFO';
   // Sin categoría reconocible: caer al texto (como el prototipo).
   if (m.includes('SAFETY CAR') || /\bVSC\b/.test(m)) return isVirtual ? 'VSC' : 'SC';
   return null;
+}
+
+/**
+ * ¿Se muestra en el feed? Fuera: banderas azules, "CLEAR" de sector (la barra de
+ * estado los usa igual), vueltas borradas por track limits y avisos administrativos.
+ */
+export function isFeedWorthy(e: RaceControlEvent): boolean {
+  if (e.type == null) return false;
+  if (e.type === 'FLAG') {
+    if (e.flag === 'BLUE') return false;
+    if (e.flag === 'CLEAR' && e.scope === 'Sector') return false;
+  }
+  return true;
 }
 
 export type TrackState = 'GREEN' | 'YELLOW' | 'DBLYELLOW' | 'SC' | 'VSC' | 'RED' | 'CHEQUERED';

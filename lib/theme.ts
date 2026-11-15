@@ -14,7 +14,7 @@ export const palette = {
   'ink-faint': '#5a6476',
   signal: '#ff1e3c', // rojo broadcast
   telemetry: '#13f1cf', // cian telemetría
-  violet: '#b14bff', // vuelta rápida / mejor de todos
+  violet: '#e03cff', // récords: vuelta rápida / mejor de todos (violeta tirando a fucsia)
   amber: '#ffb224',
   green: '#2fd45e',
   // compuestos
