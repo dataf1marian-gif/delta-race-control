@@ -55,6 +55,17 @@ async function getToken(force = false): Promise<string | null> {
   return tokenInflight;
 }
 
+/**
+ * Diagnóstico de la conexión con la suscripción: intenta canjear el token.
+ * Nunca devuelve credenciales ni el token, solo si funcionó.
+ */
+export async function authStatus(): Promise<{ configured: boolean; tokenOk: boolean; mode: 'none' | 'password' | 'token' }> {
+  const mode = process.env.OPENF1_TOKEN ? 'token' : hasLiveCredentials() ? 'password' : 'none';
+  if (mode === 'none') return { configured: false, tokenOk: false, mode };
+  const token = await getToken();
+  return { configured: true, tokenOk: !!token, mode };
+}
+
 /** fetch a OpenF1 con timeout y reintentos (429/5xx) con back-off exponencial + jitter. */
 export async function fetchUpstream(url: string): Promise<unknown[]> {
   let lastStatus = 502;

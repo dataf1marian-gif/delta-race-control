@@ -17,7 +17,7 @@ import { ALLOWED_PARAMS, LIVE_WINDOW_S, OPENF1_BASE, TRACK_TTL, TRACK_TTL_MISS, 
 import { normalizers, summarizeLaps, type NormalizedEndpoint } from '@/lib/openf1/normalize';
 import { buildTrack } from '@/lib/openf1/track';
 import type { Lap } from '@/lib/openf1/types';
-import { UpstreamError, fetchUpstream, hasLiveCredentials } from '@/lib/openf1/upstream';
+import { UpstreamError, authStatus, fetchUpstream, hasLiveCredentials } from '@/lib/openf1/upstream';
 
 export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
@@ -98,6 +98,10 @@ const cacheControl = (ttl: number) => `public, s-maxage=${ttl}, stale-while-reva
 
 export async function GET(req: Request, { params }: { params: { path: string[] } }) {
   const [endpoint, view, ...rest] = params.path;
+  if (endpoint === 'auth-status' && !view) {
+    // Diagnóstico: ¿las credenciales de la suscripción en Vercel funcionan?
+    return json(JSON.stringify(await authStatus()), 200, 'no-store');
+  }
   const isTrack = endpoint === 'track' && !view && !rest.length;
   if (!isTrack && (!endpoint || !isEndpoint(endpoint) || rest.length || (view && !VIEWS[endpoint]?.includes(view)))) {
     return json(JSON.stringify({ error: 'endpoint no soportado' }), 404, 'public, s-maxage=3600');
