@@ -108,7 +108,7 @@ export function pitsByDriver(pits: Pit[] | undefined): Record<number, Pit[]> {
 export type WeatherPoint = { air: number; track: number; hum: number; rain: boolean; t: number };
 
 /** Serie de clima reducida a ~maxPoints puntos (conserva cualquier marca de lluvia del tramo). */
-export function weatherSeries(rows: Weather[] | undefined, maxPoints = 40): WeatherPoint[] {
+export function weatherSeries(rows: Weather[] | undefined, maxPoints = 32): WeatherPoint[] {
   const valid = (rows || []).filter((r) => r.track_temperature != null && r.humidity != null);
   if (!valid.length) return [];
   const step = Math.max(1, Math.ceil(valid.length / maxPoints));
@@ -116,10 +116,15 @@ export function weatherSeries(rows: Weather[] | undefined, maxPoints = 40): Weat
   for (let i = 0; i < valid.length; i += step) {
     const chunk = valid.slice(i, i + step);
     const r = chunk[chunk.length - 1];
+    // Mediana del tramo: el sensor de pista es ruidoso (salta ±10 °C entre lecturas).
+    const med = (xs: number[]) => {
+      const v = [...xs].sort((a, b) => a - b);
+      return v.length % 2 ? v[(v.length - 1) / 2] : (v[v.length / 2 - 1] + v[v.length / 2]) / 2;
+    };
     out.push({
-      air: r.air_temperature ?? 0,
-      track: r.track_temperature as number,
-      hum: r.humidity as number,
+      air: med(chunk.map((c) => c.air_temperature ?? 0)),
+      track: med(chunk.map((c) => c.track_temperature as number)),
+      hum: med(chunk.map((c) => c.humidity as number)),
       rain: chunk.some((c) => c.rainfall),
       t: Date.parse(r.date),
     });

@@ -1,19 +1,22 @@
 'use client';
 
 import { useMemo } from 'react';
-import { groupBy, tyreUsage, type TowerRow } from '@/lib/derive';
-import { median, TYRE_ALLOCATION } from '@/lib/format';
+import { groupBy, type TowerRow } from '@/lib/derive';
+import { median } from '@/lib/format';
 import type { Pit, Stint } from '@/lib/openf1/types';
 import { useDrivers } from '../DriversContext';
-import { EmptyState, Note, SectionHeader, TeamBar, TyreChip } from '../ui';
+import { EmptyState, SectionHeader, TeamBar } from '../ui';
+import { TyreTimeline } from './TyreTimeline';
 
 interface Props {
   rows: TowerRow[];
   pits: Pit[] | undefined;
   stints: Stint[] | undefined;
+  currentLap: number | null;
+  scaleLaps: number | null;
 }
 
-export function BoxesPanel({ rows, pits, stints }: Props) {
+export function BoxesPanel({ rows, pits, stints, currentLap, scaleLaps }: Props) {
   const { ac } = useDrivers();
   const pitBy = useMemo(() => groupBy(pits), [pits]);
   const stintBy = useMemo(() => groupBy(stints), [stints]);
@@ -31,12 +34,16 @@ export function BoxesPanel({ rows, pits, stints }: Props) {
   }, [rows, pitBy, stintBy]);
 
   const pitRows = order.pits.filter((n) => pitBy[n]?.length);
-  const tyreRows = order.tyres.filter((n) => stintBy[n]?.length);
 
   return (
     <div className="lg:grid lg:grid-cols-2 lg:items-start lg:gap-x-2">
       <div>
-      <SectionHeader title="PIT STOPS" extra="TIEMPO EN PIT LANE" />
+      <SectionHeader title="PIT STOPS" extra="POR PARADA" />
+      <div className="mx-4 mb-2 flex flex-wrap gap-x-3.5 gap-y-1 font-mono text-[8.5px] tracking-[1px] text-ink-dim">
+        <span><b className="text-ink">24.0s</b> EN PIT LANE</span>
+        <span><b className="text-ink-faint">2.5s</b> DETENIDO</span>
+        <span className="text-signal">ROJO = PARADA LENTA</span>
+      </div>
       {pitRows.length ? (
         pitRows.map((n) => {
           const arr = pitBy[n];
@@ -73,46 +80,11 @@ export function BoxesPanel({ rows, pits, stints }: Props) {
       ) : (
         <EmptyState>SIN PIT STOPS REGISTRADOS</EmptyState>
       )}
-      <Note>
-        Primer valor: tiempo total en pit lane (entrada→salida, ~20-25s). Segundo (gris): tiempo estacionado cambiando
-        gomas (<b>stop_duration</b>), cuando OpenF1 lo publica. En rojo, paradas más lentas que la mediana de la sesión.
-      </Note>
       </div>
 
       <div>
-      <SectionHeader title="NEUMÁTICOS" extra="JUEGOS NUEVOS" />
-      {tyreRows.length ? (
-        tyreRows.map((n) => {
-          const u = tyreUsage(stintBy[n]);
-          const remS = Math.max(0, TYRE_ALLOCATION.slick - u.slick);
-          const remI = Math.max(0, TYRE_ALLOCATION.inter - u.inter);
-          return (
-            <div key={n} className="grid grid-cols-[40px_1fr_auto] items-center gap-2.5 border-b border-line-soft p-2.5">
-              <div className="flex items-center gap-[7px] text-sm font-bold">
-                <TeamBar n={n} h={16} />
-                {ac(n)}
-              </div>
-              <div className="flex flex-wrap items-center gap-1">
-                {u.newSets.length ? (
-                  u.newSets.map((c, i) => <TyreChip key={i} c={c} size={15} />)
-                ) : (
-                  <span className="font-mono text-[9px] text-ink-faint">sin juegos nuevos</span>
-                )}
-              </div>
-              <div className="text-right font-mono text-[10px] text-ink-faint">
-                usó <b className="font-extrabold text-ink">{u.newSets.length}</b> · rest. ≈{remS}S/{remI}I
-              </div>
-            </div>
-          );
-        })
-      ) : (
-        <EmptyState>SIN DATOS DE NEUMÁTICOS</EmptyState>
-      )}
-      <Note>
-        Juegos nuevos usados en esta sesión (stints con goma a estrenar, <b>tyre_age_at_start = 0</b>), dato real de
-        OpenF1. El &quot;restante&quot; es estimado sobre la asignación estándar del finde ({TYRE_ALLOCATION.slick} slick +{' '}
-        {TYRE_ALLOCATION.inter} inter + {TYRE_ALLOCATION.wet} wet) — la asignación real de la FIA no la expone la API.
-      </Note>
+      <SectionHeader title="NEUMÁTICOS" extra="JUEGOS POR VUELTA" />
+      <TyreTimeline order={order.tyres} stintBy={stintBy} currentLap={currentLap} scaleLaps={scaleLaps} />
       </div>
     </div>
   );

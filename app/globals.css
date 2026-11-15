@@ -102,6 +102,11 @@
   background: var(--ink);
 }
 
+/* Neumático ya usado: rayado diagonal sobre el color del compuesto */
+.tyre-used {
+  background-image: repeating-linear-gradient(135deg, rgba(7, 8, 11, 0.55) 0 3px, transparent 3px 7px) !important;
+}
+
 /* Etiquetas del feed de control */
 .t-PENALTY {
   background: rgba(255, 30, 60, 0.14);

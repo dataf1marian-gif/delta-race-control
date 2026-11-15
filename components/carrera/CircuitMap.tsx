@@ -21,11 +21,13 @@ interface Props {
   track: TrackShape | null;
   /** GPS en vivo (solo durante la sesión). */
   locations: LocationSeries[] | undefined;
+  /** Ej. "VUELTA 23/71" o "RESTA 12:40". */
+  badge?: string | null;
 }
 
 type Mode = 'gps' | 'gaps' | 'schematic';
 
-export function CircuitMap({ rows, lapRef, track, locations }: Props) {
+export function CircuitMap({ rows, lapRef, track, locations, badge }: Props) {
   const { ac, tc } = useDrivers();
   const pathRef = useRef<SVGPathElement>(null);
   const dots = useRef(new Map<number, SVGGElement>());
@@ -142,6 +144,11 @@ export function CircuitMap({ rows, lapRef, track, locations }: Props) {
           <DriverChip n={classified[0].n} /> LÍDER
         </div>
       )}
+      {badge && (
+        <div className="absolute bottom-3 left-3.5 rounded-sm border border-line bg-carbon/80 px-2 py-1 font-mono text-[11px] font-extrabold tracking-[1px] md:text-[12px]">
+          {badge}
+        </div>
+      )}
       <svg
         viewBox={`0 0 ${VB_W} ${VB_H}`}
         className="block h-auto w-full touch-none"
@@ -172,11 +179,4 @@ export function CircuitMap({ rows, lapRef, track, locations }: Props) {
       </svg>
     </div>
   );
-}
-
-export function mapNote(hasTrack: boolean, gpsLive: boolean): string {
-  if (gpsLive) return 'Posición real de cada auto con el GPS de OpenF1 (~3.7 muestras/s), reproducida con unos segundos de demora para que el movimiento sea continuo.';
-  if (hasTrack)
-    return 'Trazado real del circuito dibujado con el GPS de la vuelta más rápida. Fuera de sesión, los autos se ubican según los gaps finales; en vivo se mueven con su GPS.';
-  return 'Trazado esquemático hasta que haya GPS del circuito (aparece apenas termina la primera práctica del fin de semana). Autos espaciados por los gaps reales.';
 }

@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { buildClassification } from '@/lib/derive';
 import { computeTrackState, isFeedWorthy } from '@/lib/trackStatus';
+import { isMainRace, scheduledRaceLaps } from '@/lib/circuits';
+import { countdown } from '@/lib/format';
 import { useQualyData, useRaceData } from '@/lib/useDeltaData';
 import { BoxesPanel } from './boxes/BoxesPanel';
 import { CalendarioPanel } from './calendario/CalendarioPanel';
@@ -10,7 +12,7 @@ import { CarreraPanel } from './carrera/CarreraPanel';
 import { ControlPanel } from './control/ControlPanel';
 import { DriversProvider } from './DriversContext';
 import { Footer } from './Footer';
-import { Header, type LiveStatus } from './Header';
+import { Header, type Counter, type LiveStatus } from './Header';
 import { QualyPanel } from './qualy/QualyPanel';
 import { isTabId, type TabId } from './Tabs';
 
@@ -61,19 +63,29 @@ export function Dashboard() {
         ? 'live'
         : 'final';
 
-  const lap = useMemo(() => {
+  /** Contador del header: vuelta actual/total en carrera; tiempo restante en prácticas y qualy en vivo. */
+  const counter = useMemo((): Counter => {
+    const race = isMainRace(s) || s?.session_type === 'Race';
     const maxResultLaps = Math.max(0, ...rows.map((r) => r.laps || 0));
     if (status === 'live') {
+      if (!race && s) {
+        const left = (Date.parse(s.date_end) - data.now) / 1000;
+        return { label: 'RESTA', main: left > 0 ? countdown(left) : '0:00', sub: null };
+      }
+      // Vuelta actual: la del líder según /laps y, como respaldo (y en el demo), la del último mensaje de control.
       const leader = rows.find((r) => r.pos === 1)?.n;
-      const cur = (leader != null ? data.laps?.drivers[leader]?.lastLap : undefined) ?? data.laps?.maxLap ?? null;
-      return { current: cur || null, total: null };
+      const fromLaps = !data.demo && leader != null ? (data.laps?.drivers[leader]?.lastLap ?? 0) : 0;
+      const fromRc = Math.max(0, ...events.map((e) => e.lap_number ?? 0));
+      const cur = Math.max(fromLaps, fromRc) || null;
+      const total = isMainRace(s) ? scheduledRaceLaps(s?.circuit_short_name) : null;
+      return { label: 'VUELTA', main: cur != null ? String(cur) : '–', sub: total != null ? `/${total}` : null };
     }
     const total = maxResultLaps || data.laps?.maxLap || null;
-    return { current: total, total };
-  }, [rows, data.laps, status]);
+    return { label: 'VUELTAS', main: total != null ? String(total) : '–', sub: race && total != null ? `/${total}` : null };
+  }, [rows, data.laps, data.demo, data.now, events, status, s]);
 
   const rain = data.weather?.[data.weather.length - 1]?.rainfall;
-  const location = s ? `${s.country_name} · ${s.session_name}${rain ? ' · 🌧 LLUVIA' : ''}` : data.loading ? 'cargando…' : 'sin conexión con OpenF1';
+  const location = s ? `${s.country_name} · ${s.session_name}${rain ? ' · LLUVIA' : ''}` : data.loading ? 'cargando…' : 'sin conexión con OpenF1';
 
   const source =
     status === 'live'
@@ -91,7 +103,7 @@ export function Dashboard() {
         status={status}
         circuit={s?.circuit_short_name || s?.location || ''}
         location={location}
-        lap={lap}
+        counter={counter}
         track={track}
         lastEvent={lastEvent}
         tab={tab}
@@ -100,22 +112,27 @@ export function Dashboard() {
       <main>
         {data.demo && (
           <div role="status" className="mx-3.5 mt-3 rounded border border-telemetry/40 bg-telemetry/10 px-3 py-2.5 font-mono text-[10px] leading-[1.6] text-telemetry">
-            <b className="tracking-[1px]">MODO DEMO.</b> Repetición de la última sesión como si fuera en vivo (mismo
-            circuito de datos que una carrera real){data.demoAt ? ` · ${new Date(data.demoAt).toLocaleTimeString('es-AR')}` : ''}.{' '}
+            <b className="tracking-[1px]">MODO DEMO.</b> Repetición de la última carrera como si fuera en vivo
+            {data.demoAt ? ` · ${new Date(data.demoAt).toLocaleTimeString('es-AR')}` : ''}.{' '}
             <a href="/" className="underline">Salir</a>
           </div>
         )}
         {data.liveLocked && (
           <div role="status" className="mx-3.5 mt-3 rounded border border-amber/40 bg-amber/10 px-3 py-2.5 font-mono text-[10px] leading-[1.6] text-amber">
-            <b className="tracking-[1px]">SESIÓN EN VIVO SIN ACCESO A TIEMPO REAL.</b> OpenF1 reserva los datos en vivo a
-            suscriptores; sin suscripción se ven completos desde 30 min después de que termina la sesión.
+            <b className="tracking-[1px]">DATOS EN VIVO NO DISPONIBLES.</b> Se actualizan apenas termina la sesión.
           </div>
         )}
         <section key={tab} className="animate-fade-up" role="tabpanel" aria-label={tab}>
-          {tab === 'carrera' && <CarreraPanel data={data} rows={rows} />}
+          {tab === 'carrera' && <CarreraPanel data={data} rows={rows} mapBadge={`${counter.label} ${counter.main}${counter.sub ?? ''}`} />}
           {tab === 'qualy' && <QualyPanel q={qualy} />}
           {tab === 'control' && <ControlPanel events={events} />}
-          {tab === 'boxes' && <BoxesPanel rows={rows} pits={data.pits} stints={data.stints} />}
+          {tab === 'boxes' && <BoxesPanel
+              rows={rows}
+              pits={data.pits}
+              stints={data.stints}
+              currentLap={status === 'live' && counter.label === 'VUELTA' && counter.main !== '–' ? Number(counter.main) : null}
+              scaleLaps={isMainRace(s) ? scheduledRaceLaps(s?.circuit_short_name) : null}
+            />}
           {tab === 'calendario' && <CalendarioPanel now={data.now} />}
         </section>
         <Footer source={source} />

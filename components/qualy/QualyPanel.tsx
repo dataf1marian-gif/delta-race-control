@@ -5,7 +5,7 @@ import { countdown, lapTime } from '@/lib/format';
 import { useNow } from '@/lib/usePoll';
 import type { QualyData } from '@/lib/useDeltaData';
 import { useDrivers } from '../DriversContext';
-import { DriverChip, EmptyState, Note, SectionHeader, TeamBar } from '../ui';
+import { DriverChip, EmptyState, SectionHeader, TeamBar } from '../ui';
 import { SectorTable, sectorDriverCount } from './SectorTable';
 
 const ZONE = {
@@ -48,6 +48,11 @@ export function QualyPanel({ q }: { q: QualyData }) {
       <div className="lg:grid lg:grid-cols-2 lg:items-start lg:gap-x-2">
       <div>
       <SectionHeader title="POSICIONES" extra="Q1 · Q2 · Q3" />
+      <div className="mx-4 mb-2 flex flex-wrap gap-x-3.5 gap-y-1 font-mono text-[8.5px] tracking-[1px] text-ink-dim">
+        <LegendDot c="var(--green)">PASÓ A Q3</LegendDot>
+        <LegendDot c="var(--amber)">AFUERA EN Q2</LegendDot>
+        <LegendDot c="var(--signal)">AFUERA EN Q1</LegendDot>
+      </div>
       {results.length ? (
         <ol>
           {results.map((r) => {
@@ -98,11 +103,6 @@ export function QualyPanel({ q }: { q: QualyData }) {
       <SectorTable laps={q.laps} live={q.live} />
       </div>
       </div>
-      <Note>
-        Zonas: verde = Q3 (top 10), ámbar = eliminado en Q2 (11-15), rojo = eliminado en Q1. La pole se define por el
-        tiempo de Q3. Microsectores con los códigos <b>segments_sector_X</b> de OpenF1. La API no expone el reloj por
-        segmento: el countdown es el de la sesión completa.
-      </Note>
     </>
   );
 }

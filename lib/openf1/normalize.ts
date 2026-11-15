@@ -213,7 +213,8 @@ export const normalizers = {
       .sort(byDate),
 
   weather: (rows: Raw[]): Weather[] =>
-    rows
+    despike(
+      rows
       .map((r) => ({
         date: str(r.date),
         air_temperature: num(r.air_temperature),
@@ -225,6 +226,7 @@ export const normalizers = {
         rainfall: bool(r.rainfall) || (num(r.rainfall) ?? 0) > 0,
       }))
       .sort(byDate),
+    ),
 
   /** GPS: agrupado por auto, solo los últimos 15s, como [epochMs, x, y]. */
   location: (rows: Raw[]): LocationSeries[] => {
@@ -261,6 +263,29 @@ export const normalizers = {
 } as const;
 
 export type NormalizedEndpoint = keyof typeof normalizers;
+
+/**
+ * El sensor de clima de OpenF1 a veces manda lecturas basura (p. ej. pista = 0 °C
+ * en medio de 25 °C). Se anulan los ceros y los picos que se alejan más de un 35%
+ * (y más de 6 unidades) de la mediana de sus vecinos.
+ */
+function despike(rows: Weather[]): Weather[] {
+  const fields = ['air_temperature', 'track_temperature', 'humidity'] as const;
+  for (const f of fields) {
+    for (const r of rows) if (r[f] === 0) r[f] = null;
+    const vals = rows.map((r) => r[f]);
+    rows.forEach((r, i) => {
+      const v = vals[i];
+      if (v == null) return;
+      const nb = [vals[i - 2], vals[i - 1], vals[i + 1], vals[i + 2]].filter((x): x is number => x != null);
+      if (nb.length < 2) return;
+      nb.sort((a, b) => a - b);
+      const med = (nb[Math.floor((nb.length - 1) / 2)] + nb[Math.ceil((nb.length - 1) / 2)]) / 2;
+      if (Math.abs(v - med) > Math.max(6, med * 0.35)) r[f] = null;
+    });
+  }
+  return rows;
+}
 
 /* ---------- /laps/summary ---------- */
 

@@ -69,9 +69,9 @@ export const CAL2027: CalRound[] = [
 
 export const CAL_NOTES: Record<'2026' | '2027', string> = {
   '2026':
-    'Temporada 2026 (vía OpenF1): 23 carreras. Bahréin y Arabia se cancelaron; Bahréin se corrió en Malasia. "En curso" aparece solo de viernes a domingo del fin de semana del GP.',
+    '23 carreras. Bahréin y Arabia Saudita se cancelaron; Bahréin se corrió en Malasia.',
   '2027':
-    'Calendario 2027 oficial FIA: 24 fechas, 10 sprints. Vuelven Portugal (Portimão) y Turquía (Estambul); salen Barcelona y Países Bajos (Zandvoort).',
+    '24 fechas y 10 sprints. Vuelven Portugal (Portimão) y Turquía (Estambul); salen Barcelona y Países Bajos (Zandvoort).',
 };
 
 const DAY = 86_400_000;

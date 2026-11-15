@@ -6,13 +6,19 @@ import type { RaceControlEvent } from '@/lib/openf1/types';
 import { useDrivers } from './DriversContext';
 import { TABS, type TabId } from './Tabs';
 
+export interface Counter {
+  label: string;
+  main: string;
+  sub: string | null;
+}
+
 export type LiveStatus = 'loading' | 'live' | 'final' | 'error';
 
 interface Props {
   status: LiveStatus;
   circuit: string;
   location: string;
-  lap: { current: number | null; total: number | null };
+  counter: Counter;
   track: TrackState;
   lastEvent: RaceControlEvent | null;
   tab: TabId;
@@ -21,7 +27,7 @@ interface Props {
 
 const STATUS_TXT: Record<LiveStatus, string> = { loading: 'CARGANDO', live: 'EN VIVO', final: 'FINAL', error: 'SIN DATOS' };
 
-export function Header({ status, circuit, location, lap, track, lastEvent, tab, onTab }: Props) {
+export function Header({ status, circuit, location, counter, track, lastEvent, tab, onTab }: Props) {
   const { ac } = useDrivers();
   return (
     <header
@@ -47,10 +53,10 @@ export function Header({ status, circuit, location, lap, track, lastEvent, tab, 
             <div className="mt-[5px] truncate font-mono text-[10px] uppercase tracking-[1px] text-ink-dim">{location}</div>
           </div>
           <div className="flex-none text-right font-mono">
-            <div className="text-[9px] tracking-[2px] text-ink-faint">VUELTAS</div>
+            <div className="text-[9px] tracking-[2px] text-ink-faint">{counter.label}</div>
             <div className="text-lg font-extrabold">
-              {lap.current ?? '–'}
-              <span className="font-medium text-ink-faint">/{lap.total ?? '–'}</span>
+              {counter.main}
+              {counter.sub && <span className="font-medium text-ink-faint">{counter.sub}</span>}
             </div>
           </div>
         </div>

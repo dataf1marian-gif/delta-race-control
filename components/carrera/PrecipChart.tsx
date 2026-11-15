@@ -83,7 +83,14 @@ function drawChart(
   const plotT = padT;
   const plotB = h - padB;
   const plotH = plotB - plotT;
-  const X = (i: number) => padL + (i / (n - 1)) * (w - padL - padR);
+  // Eje X por hora real (si hay inicio/fin de sesión); si no, por orden.
+  const tStart = startISO ? Date.parse(startISO) : NaN;
+  const tEnd = endISO ? Date.parse(endISO) : NaN;
+  const byTime = Number.isFinite(tStart) && Number.isFinite(tEnd) && tEnd > tStart;
+  const X = (i: number) => {
+    const f = byTime ? Math.min(1, Math.max(0, (series[i].t - tStart) / (tEnd - tStart))) : i / (n - 1);
+    return padL + f * (w - padL - padR);
+  };
   const bw = (w - padL - padR) / (n - 1);
 
   // bandas de lluvia
