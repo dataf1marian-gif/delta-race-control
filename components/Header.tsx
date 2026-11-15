@@ -75,25 +75,83 @@ export function Header({ status, circuit, location, lap, track, lastEvent, tab, 
 
       <nav
         role="tablist"
-        className="no-scrollbar mx-3.5 mb-[11px] mt-2.5 flex gap-[3px] overflow-x-auto rounded border border-line p-1"
-        style={{ background: 'rgba(15,18,24,.9)' }}
+        aria-label="Secciones"
+        className="no-scrollbar mx-3.5 mb-3 mt-3 grid grid-cols-5 gap-1 overflow-x-auto rounded-md border border-line/90 bg-panel-2 p-1 shadow-[0_6px_20px_rgba(0,0,0,.45)]"
       >
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            role="tab"
-            aria-selected={tab === t.id}
-            onClick={() => onTab(t.id)}
-            className={`flex-auto whitespace-nowrap rounded-sm px-[11px] py-[9px] text-center font-mono text-[9px] font-bold md:text-[10px] lg:text-[11px] tracking-[.5px] transition-colors ${
-              tab === t.id ? 'bg-signal text-white' : 'text-ink-faint hover:text-ink-dim'
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
+        {TABS.map((t) => {
+          const on = tab === t.id;
+          return (
+            <button
+              key={t.id}
+              role="tab"
+              aria-selected={on}
+              onClick={() => onTab(t.id)}
+              className={`flex min-w-0 flex-col items-center justify-center gap-1 rounded px-1 py-2 font-mono text-[9.5px] font-extrabold tracking-[.6px] transition-all min-[400px]:text-[10.5px] md:flex-row md:gap-2 md:py-3 md:text-[12px] md:tracking-[1.5px] lg:text-[13px] ${
+                on
+                  ? 'bg-signal text-white shadow-[0_0_18px_rgba(255,30,60,.45)]'
+                  : 'text-ink-dim hover:bg-white/[.05] hover:text-ink'
+              }`}
+            >
+              <TabIcon id={t.id} />
+              <span className="truncate">{t.label}</span>
+            </button>
+          );
+        })}
       </nav>
     </header>
   );
+}
+
+/** Íconos de línea simples (sin marcas), heredan el color del texto. */
+function TabIcon({ id }: { id: TabId }) {
+  const common = {
+    width: 16,
+    height: 16,
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 2,
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
+    'aria-hidden': true,
+    className: 'flex-none',
+  };
+  switch (id) {
+    case 'carrera': // bandera
+      return (
+        <svg {...common}>
+          <path d="M5 21V4" />
+          <path d="M5 4h12l-2 4 2 4H5" />
+        </svg>
+      );
+    case 'qualy': // cronómetro
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="14" r="7" />
+          <path d="M12 14l3-3M10 3h4M12 3v4" />
+        </svg>
+      );
+    case 'control': // radio / torre
+      return (
+        <svg {...common}>
+          <path d="M12 12v9M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8" />
+          <circle cx="12" cy="12" r="1.5" />
+        </svg>
+      );
+    case 'boxes': // llave
+      return (
+        <svg {...common}>
+          <path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z" />
+        </svg>
+      );
+    case 'calendario':
+      return (
+        <svg {...common}>
+          <rect x="3" y="5" width="18" height="16" rx="2" />
+          <path d="M3 10h18M8 3v4M16 3v4" />
+        </svg>
+      );
+  }
 }
 
 function StatusPill({ status }: { status: LiveStatus }) {
